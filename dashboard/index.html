@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GitHub Activity Analyzer</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <h1>GitHub Activity Analyzer</h1>
+  <div id="error"></div>
+
+  <div class="summary-grid">
+    <div class="card">
+      <h2>Pull Requests</h2>
+      <div class="value" id="pr-count">—</div>
+    </div>
+    <div class="card">
+      <h2>Commits</h2>
+      <div class="value" id="commit-count">—</div>
+    </div>
+    <div class="card">
+      <h2>Avg PR Lead Time</h2>
+      <div class="value" id="lead-time">—</div>
+    </div>
+  </div>
+
+  <div class="charts-grid">
+    <div class="card">
+      <h2>Weekly Commits</h2>
+      <canvas id="weekly-commits-chart"></canvas>
+    </div>
+    <div class="card">
+      <h2>Reviewer Activity</h2>
+      <canvas id="reviewer-chart"></canvas>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
