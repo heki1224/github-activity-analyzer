@@ -1,4 +1,5 @@
 import sqlite3
+from typing import Dict, List
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS pull_requests (
@@ -74,15 +75,15 @@ class Storage:
         )
         self.conn.commit()
 
-    def get_all_prs(self) -> list[dict]:
+    def get_all_prs(self) -> List[dict]:
         rows = self.conn.execute("SELECT * FROM pull_requests").fetchall()
         return [dict(r) for r in rows]
 
-    def get_all_commits(self) -> list[dict]:
+    def get_all_commits(self) -> List[dict]:
         rows = self.conn.execute("SELECT * FROM commits").fetchall()
         return [dict(r) for r in rows]
 
-    def get_all_reviews(self) -> list[dict]:
+    def get_all_reviews(self) -> List[dict]:
         rows = self.conn.execute("SELECT * FROM reviews").fetchall()
         return [dict(r) for r in rows]
 

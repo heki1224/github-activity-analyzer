@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Dict, List, Optional
 
 
 def _parse_dt(s: Optional[str]) -> Optional[datetime]:
@@ -8,7 +8,7 @@ def _parse_dt(s: Optional[str]) -> Optional[datetime]:
     return datetime.fromisoformat(s.replace("Z", "+00:00"))
 
 
-def calc_pr_lead_time_hours(prs: list[dict]) -> float:
+def calc_pr_lead_time_hours(prs: List[dict]) -> float:
     """Average hours from created_at to merged_at (merged PRs only).
     Input: storage-format dicts with keys: created_at (str), merged_at (str|None)
     """
@@ -21,7 +21,7 @@ def calc_pr_lead_time_hours(prs: list[dict]) -> float:
     return round(sum(durations) / len(durations), 1) if durations else 0.0
 
 
-def calc_weekly_commit_counts(commits: list[dict]) -> dict[str, int]:
+def calc_weekly_commit_counts(commits: List[dict]) -> Dict[str, int]:
     """Count commits per week (YYYY-Www, %Y-W%W format).
     Input: storage-format dicts with key: committed_at (str)
     """
@@ -34,7 +34,7 @@ def calc_weekly_commit_counts(commits: list[dict]) -> dict[str, int]:
     return dict(sorted(counts.items()))
 
 
-def calc_reviewer_activity(reviews: list[dict]) -> dict[str, int]:
+def calc_reviewer_activity(reviews: List[dict]) -> Dict[str, int]:
     """Count reviews per reviewer, sorted by count descending.
     Input: storage-format dicts with key: reviewer (str)
     """
