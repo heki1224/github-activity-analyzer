@@ -1,0 +1,22 @@
+services:
+  api:
+    build: ./api
+    ports:
+      - "3001:3001"
+    environment:
+      - DB_PATH=/data/activity.db
+    volumes:
+      - db_data:/data
+    restart: unless-stopped
+
+  collector:
+    build: ./collector
+    environment:
+      - DB_PATH=/data/activity.db
+    volumes:
+      - db_data:/data
+    profiles:
+      - tools
+
+volumes:
+  db_data:
