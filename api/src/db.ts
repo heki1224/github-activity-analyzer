@@ -16,3 +16,7 @@ export function getDb(): Database.Database {
   }
   return db;
 }
+
+export function openDb(dbPath: string, readonly = false): Database.Database {
+  return new Database(dbPath, { readonly });
+}
