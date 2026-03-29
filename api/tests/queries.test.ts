@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { getSummary, getTimeseries } from "../src/queries";
+import { getSummary, getTimeseries, getHeatmap, getPrDistribution } from "../src/queries";
 import type Database from "better-sqlite3";
 
 function mockDb(
@@ -72,5 +72,37 @@ describe("getTimeseries", () => {
     const result = getTimeseries(db);
     expect(result.weekly_commits).toEqual([]);
     expect(result.reviewer_activity).toEqual([]);
+  });
+});
+
+describe("getHeatmap", () => {
+  it("returns heatmap cells", () => {
+    const db = mockDb([
+      { all: () => [{ dow: 1, hour: 10, count: 5 }, { dow: 3, hour: 14, count: 2 }] },
+    ]);
+    const result = getHeatmap(db);
+    expect(result).toHaveLength(2);
+    expect(result[0]).toEqual({ dow: 1, hour: 10, count: 5 });
+  });
+
+  it("returns empty array when no commits", () => {
+    const db = mockDb([{ all: () => [] }]);
+    expect(getHeatmap(db)).toEqual([]);
+  });
+});
+
+describe("getPrDistribution", () => {
+  it("returns bucket distribution", () => {
+    const db = mockDb([
+      { all: () => [{ bucket: "0-4h", count: 3 }, { bucket: "1-3d", count: 7 }] },
+    ]);
+    const result = getPrDistribution(db);
+    expect(result).toHaveLength(2);
+    expect(result[0]).toEqual({ bucket: "0-4h", count: 3 });
+  });
+
+  it("returns empty array when no merged PRs", () => {
+    const db = mockDb([{ all: () => [] }]);
+    expect(getPrDistribution(db)).toEqual([]);
   });
 });

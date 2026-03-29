@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { readFileSync } from "fs";
 import { resolve } from "path";
 import { openDb } from "../src/db";
-import { getSummary, getTimeseries } from "../src/queries";
+import { getSummary, getTimeseries, getHeatmap, getPrDistribution } from "../src/queries";
 import type Database from "better-sqlite3";
 
 const SCHEMA_PATH = resolve(__dirname, "../../collector/schema.sql");
@@ -73,5 +73,38 @@ describe("getTimeseries (integration)", () => {
     const reviewers = result.reviewer_activity.map((r) => r.reviewer);
     expect(reviewers).toContain("bob");
     expect(reviewers).toContain("carol");
+  });
+});
+
+describe("getHeatmap (integration)", () => {
+  it("returns cells with dow and hour", () => {
+    const result = getHeatmap(db);
+    expect(result.length).toBeGreaterThan(0);
+    for (const cell of result) {
+      expect(cell.dow).toBeGreaterThanOrEqual(0);
+      expect(cell.dow).toBeLessThanOrEqual(6);
+      expect(cell.hour).toBeGreaterThanOrEqual(0);
+      expect(cell.hour).toBeLessThanOrEqual(23);
+      expect(cell.count).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe("getPrDistribution (integration)", () => {
+  it("returns distribution for merged PRs only", () => {
+    // PR#1: 36h lead time → '1-3d' bucket
+    const result = getPrDistribution(db);
+    expect(result.length).toBeGreaterThan(0);
+    const buckets = result.map((r) => r.bucket);
+    expect(buckets).toContain("1-3d");
+  });
+
+  it("each bucket has valid name and positive count", () => {
+    const valid = new Set(["0-4h", "4-12h", "12-24h", "1-3d", "3-7d", "7d+"]);
+    const result = getPrDistribution(db);
+    for (const row of result) {
+      expect(valid.has(row.bucket)).toBe(true);
+      expect(row.count).toBeGreaterThan(0);
+    }
   });
 });

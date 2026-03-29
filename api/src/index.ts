@@ -1,6 +1,8 @@
 import express from "express";
 import { summaryRouter } from "./routes/summary";
 import { timeseriesRouter } from "./routes/timeseries";
+import { heatmapRouter } from "./routes/heatmap";
+import { prDistributionRouter } from "./routes/pr-distribution";
 
 const app = express();
 const PORT = process.env.PORT ?? 3001;
@@ -12,6 +14,8 @@ app.use((_req, res, next) => {
 
 app.use("/api/summary", summaryRouter);
 app.use("/api/timeseries", timeseriesRouter);
+app.use("/api/heatmap", heatmapRouter);
+app.use("/api/pr-distribution", prDistributionRouter);
 
 app.listen(PORT, () => {
   console.log(`API running at http://localhost:${PORT}`);

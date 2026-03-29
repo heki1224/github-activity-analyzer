@@ -6,6 +6,7 @@
   <title>GitHub Activity Analyzer</title>
   <link rel="stylesheet" href="style.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@2.0.1/dist/chartjs-chart-matrix.min.js"></script>
 </head>
 <body>
   <h1>GitHub Activity Analyzer</h1>
@@ -34,6 +35,14 @@
     <div class="card">
       <h2>Reviewer Activity</h2>
       <canvas id="reviewer-chart"></canvas>
+    </div>
+    <div class="card">
+      <h2>Commit Heatmap (Day × Hour)</h2>
+      <canvas id="heatmap-chart"></canvas>
+    </div>
+    <div class="card">
+      <h2>PR Lead Time Distribution</h2>
+      <canvas id="pr-distribution-chart"></canvas>
     </div>
   </div>
 

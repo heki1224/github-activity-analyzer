@@ -6,6 +6,17 @@ export interface Summary {
   avg_lead_time_hours: number;
 }
 
+export interface HeatmapCell {
+  dow: number;
+  hour: number;
+  count: number;
+}
+
+export interface PrBucket {
+  bucket: string;
+  count: number;
+}
+
 export interface Timeseries {
   weekly_commits: { week: string; count: number }[];
   reviewer_activity: { reviewer: string; count: number }[];
@@ -52,4 +63,48 @@ export function getTimeseries(db: Database.Database): Timeseries {
     .all() as { reviewer: string; count: number }[];
 
   return { weekly_commits: weeklyCommits, reviewer_activity: reviewerActivity };
+}
+
+export function getHeatmap(db: Database.Database): HeatmapCell[] {
+  return db
+    .prepare(
+      `SELECT
+         CAST(strftime('%w', committed_at, 'localtime') AS INTEGER) as dow,
+         CAST(strftime('%H', committed_at, 'localtime') AS INTEGER) as hour,
+         COUNT(*) as count
+       FROM commits
+       GROUP BY dow, hour`
+    )
+    .all() as HeatmapCell[];
+}
+
+export function getPrDistribution(db: Database.Database): PrBucket[] {
+  return db
+    .prepare(
+      `SELECT
+         CASE
+           WHEN hours < 4   THEN '0-4h'
+           WHEN hours < 12  THEN '4-12h'
+           WHEN hours < 24  THEN '12-24h'
+           WHEN hours < 72  THEN '1-3d'
+           WHEN hours < 168 THEN '3-7d'
+           ELSE '7d+'
+         END as bucket,
+         COUNT(*) as count
+       FROM (
+         SELECT (julianday(merged_at) - julianday(created_at)) * 24 as hours
+         FROM pull_requests
+         WHERE merged_at IS NOT NULL
+       )
+       GROUP BY bucket
+       ORDER BY CASE bucket
+         WHEN '0-4h'   THEN 1
+         WHEN '4-12h'  THEN 2
+         WHEN '12-24h' THEN 3
+         WHEN '1-3d'   THEN 4
+         WHEN '3-7d'   THEN 5
+         ELSE 6
+       END`
+    )
+    .all() as PrBucket[];
 }
