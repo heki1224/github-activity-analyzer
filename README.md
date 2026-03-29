@@ -25,8 +25,7 @@ cp .env.example .env
 
 ```bash
 cd collector
-pip install -r requirements.txt
-python main.py --org YOUR_ORG --repo YOUR_REPO --days 90
+uv run python main.py --org YOUR_ORG --repo YOUR_REPO --days 90
 ```
 
 ### 3. Start the API (TypeScript)
@@ -75,12 +74,24 @@ Logs are written to `logs/collect.log` (auto-rotated at 1MB).
 
 > **Note**: cron does not run while Mac is asleep. If you need guaranteed daily execution, use `launchd` instead.
 
+## API Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/summary` | PR count, commit count, avg lead time |
+| GET | `/api/timeseries` | Weekly commits, reviewer activity |
+| GET | `/api/heatmap` | Commit counts by day-of-week × hour |
+| GET | `/api/pr-distribution` | PR lead time distribution (0-4h … 7d+) |
+| GET | `/api/review-turnaround` | Avg hours from PR creation to first review |
+| GET | `/api/code-churn` | Weekly additions/deletions |
+| GET | `/api/contributors` | Commit/PR/review counts per contributor |
+
 ## Development
 
 ### Run Python tests
 
 ```bash
-cd collector && python -m pytest tests/ -v
+cd collector && uv run pytest tests/ -v
 ```
 
 ### Run TypeScript tests
@@ -93,7 +104,7 @@ cd api && npm test
 
 | Layer | Technology |
 |-------|-----------|
-| Collector | Python 3.9+, requests, pytest |
+| Collector | Python 3.14 (uv), requests, pytest |
 | Database | SQLite |
 | API | TypeScript 5, Express 4, better-sqlite3, Vitest |
 | Dashboard | Vanilla JavaScript, Chart.js |
