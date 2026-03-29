@@ -17,6 +17,23 @@ export interface PrBucket {
   count: number;
 }
 
+export interface ReviewTurnaround {
+  avg_hours: number;
+  by_repo: { repo: string; avg_hours: number }[];
+}
+
+export interface CodeChurnWeek {
+  week: string;
+  additions: number;
+  deletions: number;
+}
+
+export interface Contributors {
+  commits: { author: string; count: number }[];
+  prs: { author: string; count: number }[];
+  reviews: { reviewer: string; count: number }[];
+}
+
 export interface Timeseries {
   weekly_commits: { week: string; count: number }[];
   reviewer_activity: { reviewer: string; count: number }[];
@@ -76,6 +93,82 @@ export function getHeatmap(db: Database.Database): HeatmapCell[] {
        GROUP BY dow, hour`
     )
     .all() as HeatmapCell[];
+}
+
+export function getReviewTurnaround(db: Database.Database): ReviewTurnaround {
+  // Average hours from PR created_at to first real review (excluding bots and self-reviews)
+  const rows = db
+    .prepare(
+      `SELECT p.repo,
+              AVG((julianday(r.submitted_at) - julianday(p.created_at)) * 24) as avg_hours
+       FROM pull_requests p
+       JOIN (
+         SELECT pr_number, repo, MIN(submitted_at) as submitted_at
+         FROM reviews
+         WHERE reviewer NOT LIKE '%[bot]%'
+           AND reviewer != (
+             SELECT author FROM pull_requests p2
+             WHERE p2.number = pr_number AND p2.repo = reviews.repo
+           )
+           AND state IN ('APPROVED', 'CHANGES_REQUESTED', 'COMMENTED')
+         GROUP BY pr_number, repo
+       ) r ON p.number = r.pr_number AND p.repo = r.repo
+       GROUP BY p.repo`
+    )
+    .all() as { repo: string; avg_hours: number | null }[];
+
+  const byRepo = rows
+    .filter((r) => r.avg_hours != null)
+    .map((r) => ({
+      repo: r.repo,
+      avg_hours: Math.round((r.avg_hours as number) * 10) / 10,
+    }));
+
+  const overall =
+    byRepo.length > 0
+      ? Math.round((byRepo.reduce((s, r) => s + r.avg_hours, 0) / byRepo.length) * 10) / 10
+      : 0;
+
+  return { avg_hours: overall, by_repo: byRepo };
+}
+
+export function getCodeChurn(db: Database.Database): CodeChurnWeek[] {
+  const rows = db
+    .prepare(
+      `SELECT week_ts, SUM(additions) as additions, SUM(deletions) as deletions
+       FROM weekly_code_stats
+       GROUP BY week_ts
+       ORDER BY week_ts`
+    )
+    .all() as { week_ts: number; additions: number; deletions: number }[];
+
+  return rows.map((r) => ({
+    week: new Date(r.week_ts * 1000).toISOString().slice(0, 10),
+    additions: r.additions,
+    deletions: r.deletions,
+  }));
+}
+
+export function getContributors(db: Database.Database): Contributors {
+  const commits = db
+    .prepare(
+      `SELECT author, COUNT(*) as count FROM commits GROUP BY author ORDER BY count DESC LIMIT 20`
+    )
+    .all() as { author: string; count: number }[];
+
+  const prs = db
+    .prepare(
+      `SELECT author, COUNT(*) as count FROM pull_requests WHERE author != '' GROUP BY author ORDER BY count DESC LIMIT 20`
+    )
+    .all() as { author: string; count: number }[];
+
+  const reviews = db
+    .prepare(
+      `SELECT reviewer, COUNT(*) as count FROM reviews WHERE reviewer NOT LIKE '%[bot]%' GROUP BY reviewer ORDER BY count DESC LIMIT 20`
+    )
+    .all() as { reviewer: string; count: number }[];
+
+  return { commits, prs, reviews };
 }
 
 export function getPrDistribution(db: Database.Database): PrBucket[] {

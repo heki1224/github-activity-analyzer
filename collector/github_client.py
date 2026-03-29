@@ -49,6 +49,20 @@ class GitHubClient:
     def get_reviews(self, owner: str, repo: str, pr_number: int) -> list[dict]:
         return self._get(f"/repos/{owner}/{repo}/pulls/{pr_number}/reviews")  # type: ignore[return-value]
 
+    def get_stats_code_frequency(self, owner: str, repo: str) -> list[list[int]]:
+        """Returns [[unix_ts, additions, deletions], ...] for all weeks.
+        GitHub may return 202 while computing — caller should retry.
+        """
+        resp = self.session.get(f"{BASE_URL}/repos/{owner}/{repo}/stats/code_frequency")
+        if resp.status_code == 202:
+            return []  # not ready yet; caller retries
+        if resp.status_code == 403:
+            retry_after = int(resp.headers.get("Retry-After", 60))
+            time.sleep(retry_after)
+            return self.get_stats_code_frequency(owner, repo)
+        resp.raise_for_status()
+        return resp.json() or []  # type: ignore[return-value]
+
     def get_commits(self, owner: str, repo: str, days: int) -> list[dict]:
         since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
         commits: list[dict] = []

@@ -27,7 +27,8 @@ def main() -> None:
     all_reviews = []
     for pr in prs:
         reviews = client.get_reviews(args.org, args.repo, pr["number"])
-        storage.upsert_pr(args.repo, pr, review_count=len(reviews))
+        pr_normalized = {**pr, "author": (pr.get("user") or {}).get("login", "")}
+        storage.upsert_pr(args.repo, pr_normalized, review_count=len(reviews))
         for review in reviews:
             storage.upsert_review(args.repo, pr_number=pr["number"], review=review)
         all_reviews.extend(reviews)
@@ -36,6 +37,16 @@ def main() -> None:
     commits = client.get_commits(args.org, args.repo, args.days)
     for commit in commits:
         storage.upsert_commit(args.repo, commit)
+
+    print("Collecting code frequency stats...")
+    import time as _time
+    for attempt in range(3):
+        freq = client.get_stats_code_frequency(args.org, args.repo)
+        if freq:
+            for week_ts, additions, deletions in freq:
+                storage.upsert_weekly_stats(args.repo, int(week_ts), int(additions), abs(int(deletions)))
+            break
+        _time.sleep(5)  # GitHub is computing; retry
 
     db_prs = storage.get_all_prs()
     db_commits = storage.get_all_commits()

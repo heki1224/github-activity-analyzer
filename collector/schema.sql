@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS pull_requests (
     number INTEGER NOT NULL,
     repo TEXT NOT NULL,
     title TEXT NOT NULL,
+    author TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL,
     merged_at TEXT,
     review_count INTEGER DEFAULT 0,
@@ -19,5 +20,13 @@ CREATE TABLE IF NOT EXISTS reviews (
     pr_number INTEGER NOT NULL,
     repo TEXT NOT NULL,
     reviewer TEXT NOT NULL,
-    submitted_at TEXT NOT NULL
+    submitted_at TEXT NOT NULL,
+    state TEXT NOT NULL DEFAULT ''
+);
+CREATE TABLE IF NOT EXISTS weekly_code_stats (
+    week_ts  INTEGER NOT NULL,
+    repo     TEXT NOT NULL,
+    additions INTEGER DEFAULT 0,
+    deletions INTEGER DEFAULT 0,
+    UNIQUE(repo, week_ts)
 );

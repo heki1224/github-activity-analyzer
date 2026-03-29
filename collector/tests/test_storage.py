@@ -6,10 +6,11 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from storage import Storage
 
 
-def _make_pr(number: int, merged: bool = True) -> dict:
+def _make_pr(number: int, merged: bool = True, author: str = "alice") -> dict:
     return {
         "number": number,
         "title": f"PR {number}",
+        "author": author,
         "created_at": "2026-01-01T00:00:00Z",
         "merged_at": "2026-01-02T00:00:00Z" if merged else None,
     }
@@ -72,11 +73,33 @@ def test_upsert_review_and_retrieve():
         db_path = f.name
     try:
         s = Storage(db_path)
-        review = {"user": {"login": "alice"}, "submitted_at": "2026-01-05T10:00:00Z"}
+        review = {"user": {"login": "alice"}, "submitted_at": "2026-01-05T10:00:00Z", "state": "APPROVED"}
         s.upsert_review("myrepo", pr_number=1, review=review)
         reviews = s.get_all_reviews()
         assert len(reviews) == 1
         assert reviews[0]["reviewer"] == "alice"
+        assert reviews[0]["state"] == "APPROVED"
+        s.close()
+    finally:
+        os.unlink(db_path)
+
+
+def test_upsert_weekly_stats_and_retrieve():
+    with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
+        db_path = f.name
+    try:
+        s = Storage(db_path)
+        s.upsert_weekly_stats("myrepo", 1700000000, 100, 50)
+        s.upsert_weekly_stats("myrepo", 1700604800, 200, 80)
+        stats = s.get_all_weekly_stats()
+        assert len(stats) == 2
+        assert stats[0]["additions"] == 100
+        assert stats[1]["deletions"] == 80
+        # idempotent
+        s.upsert_weekly_stats("myrepo", 1700000000, 999, 1)
+        stats = s.get_all_weekly_stats()
+        assert len(stats) == 2
+        assert stats[0]["additions"] == 999
         s.close()
     finally:
         os.unlink(db_path)
