@@ -44,6 +44,37 @@ npm run dev
 open dashboard/index.html
 ```
 
+## Automated Collection (crontab)
+
+Run `scripts/collect.sh` daily via crontab to keep data up to date.
+
+### Setup
+
+```bash
+# 1. Set target org/repo in your shell profile or crontab
+export COLLECT_ORG=your-org
+export COLLECT_REPO=your-repo
+export COLLECT_DAYS=30   # optional, default: 30
+
+# 2. Make sure .env has GITHUB_TOKEN set
+cp .env.example .env
+# Edit .env: set GITHUB_TOKEN
+
+# 3. Add to crontab (runs every day at 08:00)
+crontab -e
+```
+
+Add this line to crontab:
+
+```
+PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+0 8 * * * COLLECT_ORG=your-org COLLECT_REPO=your-repo /path/to/github-activity-analyzer/scripts/collect.sh
+```
+
+Logs are written to `logs/collect.log` (auto-rotated at 1MB).
+
+> **Note**: cron does not run while Mac is asleep. If you need guaranteed daily execution, use `launchd` instead.
+
 ## Development
 
 ### Run Python tests

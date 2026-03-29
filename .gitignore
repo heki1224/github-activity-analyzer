@@ -17,5 +17,11 @@ dist/
 .env.*
 !.env.example
 
+# Logs
+logs/
+
+# uv virtualenv
+collector/.venv/
+
 # OS
 .DS_Store
